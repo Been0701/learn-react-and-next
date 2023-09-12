@@ -1,9 +1,10 @@
-import { useReducer, useRef, useState } from 'react'
+import { useReducer, useRef, useState, useCallback } from 'react'
 
 import './App.css'
 import Header from './components/Header'
 import TodoEditor from './components/TodoEditor'
 import { TodoList } from './components/TodoList'
+import { TodoContext } from './TodoContext'
 
 const mockData = [
   {
@@ -26,13 +27,16 @@ const mockData = [
   },
 ];
 
-function reducer(state, action) {
+function reducer(state, action) { // state : 현재 todos 배열을 받음
   switch(action.type) {
     case 'CREATE': {
       return [...state, action.data];
     }
     case 'UPDATE': {
-      return 
+      return state.map((it) => it.id === action.data ? {...it, isDone: !it.isDone} : it)
+    }
+    case 'DELETE': {
+      return state.filter((it) => it.id !== action.data)
     }
   }
 }
@@ -58,7 +62,7 @@ function App() {
     // );
   }
 
-  const onUpdate = (targetId) => {
+  const onUpdate = useCallback((targetId) => {
     dispatch({
       type : "UPDATE",
       data : targetId
@@ -76,17 +80,25 @@ function App() {
       // })
       // todos.map((todo) => todo.id === targetId ? {...todo, isDone: !todo.isDone} : todo)
     // )
-  }
+  },[]);
 
-  const onDelete = (targetId) => {
+  const onDelete = useCallback((targetId) => {
+    dispatch({
+      type : "DELETE",
+      data : targetId
+    })
     // setTodos(todos.filter((todo) => todo.id !== targetId))
-  }
+  },[]);
 
   return (
     <div className='App'>
       <Header/>
-      <TodoEditor onCreate={onCreate}/>
-      <TodoList todos={todos} onUpdate={onUpdate} onDelete={onDelete}/>
+      <TodoContext.Provider value={{
+        todos, onCreate, onUpdate, onDelete
+      }}>
+        <TodoEditor/>
+        <TodoList/>
+      </TodoContext.Provider>
     </div>
   )
 }
